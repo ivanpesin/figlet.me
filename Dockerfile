@@ -2,6 +2,7 @@ FROM golang AS builder
 
 RUN apt-get update
 RUN cd /go/src && git clone https://github.com/ivanpesin/figlet.me.git
+ENV CGO_ENABLED 0
 RUN cd /go/src/figlet.me && go-wrapper download && go-wrapper install
 
 FROM alpine
