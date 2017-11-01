@@ -38,7 +38,7 @@ func getFidgetFonts() (r []string) {
 func fidgetHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := uuid.NewV4().String()[:6]
-	log.Printf("| %6s | %s %s ", id, r.Method, r.URL.Path)
+	log.Printf("| %6s | %s | %s %s ", id, r.RemoteAddr, r.Method, r.URL.Path)
 
 	w.Header().Set("Content-type", "text/plain")
 
@@ -62,14 +62,32 @@ func fidgetHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		text := params.Get("text")
 		if text == "" {
-			text = "hello, world"
+			help := `
+figlet.me v1.0 -- web service that converts strings to ascii art letters.
+
+endpoints:
+   /getFonts    returns list of available fonts
+   /            shows help message if no parameters specified
+   /?text=<text>[&font=<font>]
+                specifies text and font for ascii art
+
+Parameters can be passed via both GET and POST methods.
+
+Example:
+   $ curl http://figlet.me/?text=LISA17
+   $ curl -d "font=slant" -d "text=USENIX LISA17 San Francisco" http://figlet.me/
+
+`
+			log.Printf("| %6s | %s | --> help", id, r.RemoteAddr)
+			io.WriteString(w, help)
+			break
 		}
 
-		log.Printf("| %6s | --> font: %s", id, font)
-		log.Printf("| %6s | --> text: %s", id, text)
+		log.Printf("| %6s | %s | --> font: %s", id, r.RemoteAddr, font)
+		log.Printf("| %6s | %s | --> text: %s", id, r.RemoteAddr, text)
 
 		if _, ok := figletFonts[font]; !ok {
-			log.Printf("| %6s | 404 | No such font", id)
+			log.Printf("| %6s | %s | 404 | No such font", id, r.RemoteAddr)
 			w.WriteHeader(http.StatusNotImplemented)
 			io.WriteString(w, "404 No such font\n")
 			return
@@ -77,13 +95,13 @@ func fidgetHandler(w http.ResponseWriter, r *http.Request) {
 
 		io.WriteString(w, execFiglet(font, text))
 	default:
-		log.Printf("| %6s | 404 | Not found", id)
+		log.Printf("| %6s | %s | 404 | Not found", id, r.RemoteAddr)
 		w.WriteHeader(http.StatusNotFound)
 		io.WriteString(w, "404 Not found\n")
 		return
 	}
 
-	log.Printf("| %6s | 200 | Done", id)
+	log.Printf("| %6s | %s | 200 | Done", id, r.RemoteAddr)
 
 }
 
